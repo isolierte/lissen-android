@@ -50,7 +50,7 @@ fun PlaylistItemComposable(
 
   val forceLeadingHours = maxDuration >= 60 * 60
   val maxDurationText = remember(maxDuration) { maxDuration.toInt().formatTime(forceLeadingHours) }
-  val bodySmallStyle = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
+  val bodySmallStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
 
   val durationColumnWidth =
     remember(maxDurationText, density, bodySmallStyle) {
@@ -73,7 +73,7 @@ fun PlaylistItemComposable(
       modifier
         .padding(start = 6.dp)
         .padding(end = 4.dp)
-        .padding(vertical = 2.dp)
+        .padding(vertical = 12.dp)
         .clickable(
           onClick = onClick,
           indication = null,
@@ -106,7 +106,7 @@ fun PlaylistItemComposable(
 
     Text(
       text = track.title,
-      style = MaterialTheme.typography.titleSmall,
+      style = MaterialTheme.typography.titleMedium,
       color =
         when (track.available) {
           true -> colorScheme.onBackground
@@ -137,7 +137,7 @@ fun PlaylistItemComposable(
 
     Text(
       text = track.duration.toInt().formatTime(forceLeadingHours),
-      style = MaterialTheme.typography.bodySmall,
+      style = MaterialTheme.typography.bodyMedium,
       modifier = Modifier.widthIn(min = durationColumnWidth),
       textAlign = TextAlign.End,
       fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,

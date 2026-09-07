@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Bookmarks
-import androidx.compose.material.icons.outlined.FastForward
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -68,7 +67,6 @@ import org.grakovne.lissen.ui.navigation.AppNavigationService
 import org.grakovne.lissen.ui.screens.player.composable.BookCover
 import org.grakovne.lissen.ui.screens.player.composable.BookmarksComposable
 import org.grakovne.lissen.ui.screens.player.composable.MediaDetailComposable
-import org.grakovne.lissen.ui.screens.player.composable.SkipSettingsComposable
 import org.grakovne.lissen.ui.screens.player.composable.NavigationBarComposable
 import org.grakovne.lissen.ui.screens.player.composable.PlayingQueueComposable
 import org.grakovne.lissen.ui.screens.player.composable.TrackControlComposable
@@ -134,7 +132,6 @@ fun PlayerScreen(
 
   var itemDetailsSelected by remember { mutableStateOf(false) }
   var bookmarksSelected by remember { mutableStateOf(false) }
-  var skipSettingsSelected by remember { mutableStateOf(false) }
 
   val preferredLibraryType by libraryViewModel.preferredLibraryType.collectAsState()
   val libraryType = playingBook?.libraryType ?: preferredLibraryType
@@ -263,23 +260,6 @@ fun PlayerScreen(
                         contentDescription = null,
                       )
                     }
-
-                    IconButton(
-                      onClick = {
-                        if (isPlaybackReady) {
-                          skipSettingsSelected = true
-                        }
-                      },
-                      modifier =
-                        Modifier
-                          .padding(end = 4.dp)
-                          .testTag("playerSkipSettingsButton"),
-                    ) {
-                      Icon(
-                        imageVector = Icons.Outlined.FastForward,
-                        contentDescription = null,
-                      )
-                    }
                   }
                 }
               }
@@ -402,13 +382,6 @@ fun PlayerScreen(
     BookmarksComposable(
       playerViewModel = playerViewModel,
       onDismissRequest = { bookmarksSelected = false },
-    )
-  }
-
-  if (skipSettingsSelected) {
-    SkipSettingsComposable(
-      playerViewModel = playerViewModel,
-      onDismissRequest = { skipSettingsSelected = false },
     )
   }
 }

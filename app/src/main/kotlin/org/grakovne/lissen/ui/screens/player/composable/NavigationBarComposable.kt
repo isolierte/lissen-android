@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.outlined.FastForward
 import androidx.compose.material.icons.outlined.SlowMotionVideo
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.CircularProgressIndicator
@@ -71,6 +72,7 @@ fun NavigationBarComposable(
   var timerExpanded by remember { mutableStateOf(false) }
   var downloadsExpanded by remember { mutableStateOf(false) }
   var chapterListExpanded by remember { mutableStateOf(false) }
+  var skipSettingsExpanded by remember { mutableStateOf(false) }
 
   val scope = rememberCoroutineScope()
 
@@ -219,6 +221,32 @@ fun NavigationBarComposable(
           ),
       )
 
+      NavigationBarItem(
+        icon = {
+          Icon(
+            Icons.Outlined.FastForward,
+            contentDescription = stringResource(R.string.player_screen_skip_settings_navigation),
+            modifier = Modifier.size(iconSize),
+          )
+        },
+        label = {
+          Text(
+            text = stringResource(R.string.player_screen_skip_navigation),
+            style = labelStyle,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+        },
+        enabled = hasEpisodes,
+        selected = skipSettingsExpanded,
+        onClick = { skipSettingsExpanded = true },
+        colors =
+          NavigationBarItemDefaults.colors(
+            selectedIconColor = colorScheme.primary,
+            indicatorColor = colorScheme.surfaceContainer,
+          ),
+      )
+
       if (playbackSpeedExpanded) {
         PlaybackSpeedComposable(
           currentSpeed = playbackSpeed,
@@ -288,6 +316,13 @@ fun NavigationBarComposable(
           cachingModelView = contentCachingModelView,
           playerViewModel = playerViewModel,
           onDismissRequest = { chapterListExpanded = false },
+        )
+      }
+
+      if (skipSettingsExpanded) {
+        SkipSettingsComposable(
+          playerViewModel = playerViewModel,
+          onDismissRequest = { skipSettingsExpanded = false },
         )
       }
     }
