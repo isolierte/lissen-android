@@ -61,7 +61,6 @@ fun NavigationBarComposable(
   val timerOption by playerViewModel.timerOption.collectAsState()
   val timerRemaining by playerViewModel.timerRemaining.collectAsState()
   val playbackSpeed by playerViewModel.playbackSpeed.collectAsState()
-  val playingQueueExpanded by playerViewModel.playingQueueExpanded.collectAsState()
   val hasEpisodes = book.chapters.isNotEmpty()
 
   val isMetadataCached by remember(book.id) { contentCachingModelView.provideCacheState(book.id) }.collectAsState(initial = false)
@@ -71,6 +70,7 @@ fun NavigationBarComposable(
   var playbackSpeedExpanded by remember { mutableStateOf(false) }
   var timerExpanded by remember { mutableStateOf(false) }
   var downloadsExpanded by remember { mutableStateOf(false) }
+  var chapterListExpanded by remember { mutableStateOf(false) }
 
   val scope = rememberCoroutineScope()
 
@@ -113,8 +113,8 @@ fun NavigationBarComposable(
             overflow = TextOverflow.Ellipsis,
           )
         },
-        selected = playingQueueExpanded,
-        onClick = { playerViewModel.togglePlayingQueue() },
+        selected = chapterListExpanded,
+        onClick = { chapterListExpanded = true },
         colors =
           NavigationBarItemDefaults.colors(
             selectedIconColor = colorScheme.primary,
@@ -279,6 +279,15 @@ fun NavigationBarComposable(
               }
           },
           onDismissRequest = { downloadsExpanded = false },
+        )
+      }
+
+      if (chapterListExpanded) {
+        ChapterListSheet(
+          libraryType = libraryType,
+          cachingModelView = contentCachingModelView,
+          playerViewModel = playerViewModel,
+          onDismissRequest = { chapterListExpanded = false },
         )
       }
     }

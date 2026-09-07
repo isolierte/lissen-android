@@ -81,7 +81,7 @@ fun TrackControlComposable(
       modifier
         .testTag("trackControls")
         .fillMaxWidth()
-        .padding(horizontal = 12.dp),
+        .padding(horizontal = 6.dp),
   ) {
     val positionLabel = stringResource(R.string.a11y_playback_position)
     val spokenPosition =
@@ -169,7 +169,7 @@ fun TrackControlComposable(
             imageVector = Icons.Rounded.SkipPrevious,
             contentDescription = stringResource(R.string.a11y_previous_track),
             tint = colorScheme.onBackground,
-            modifier = Modifier.size(36.dp),
+            modifier = Modifier.size(42.dp),
           )
         }
 
@@ -180,7 +180,7 @@ fun TrackControlComposable(
             imageVector = provideReplayIcon(seekTime),
             contentDescription = stringResource(R.string.a11y_rewind_seconds, seekTime.rewind),
             tint = colorScheme.onBackground,
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(52.dp),
           )
         }
 
@@ -203,7 +203,7 @@ fun TrackControlComposable(
             imageVector = provideForwardIcon(seekTime),
             contentDescription = stringResource(R.string.a11y_fast_forward_seconds, seekTime.forward),
             tint = colorScheme.onBackground,
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(52.dp),
           )
         }
 
@@ -226,7 +226,7 @@ fun TrackControlComposable(
                   alpha = 0.3f,
                 )
               },
-            modifier = Modifier.size(36.dp),
+            modifier = Modifier.size(42.dp),
           )
         }
       }

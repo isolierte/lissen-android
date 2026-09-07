@@ -2,13 +2,9 @@ package org.grakovne.lissen.ui.screens.player
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.keyframes
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -378,30 +374,14 @@ fun PlayerScreen(
               .padding(innerPadding),
           horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-          AnimatedVisibility(
-            visible = playingQueueExpanded.not(),
-            enter = expandVertically(animationSpec = tween(400)),
-            exit = shrinkVertically(animationSpec = tween(400)),
-          ) {
-            PlayerArtworkAndControls(
-              isPlaybackReady = isPlaybackReady,
-              bookTitle = bookTitle,
-              bookSubtitle = bookSubtitle,
-              playerViewModel = playerViewModel,
-              imageLoader = imageLoader,
-              libraryType = libraryType,
-              settingsViewModel = settingsViewModel,
-            )
-          }
-
-          Spacer(modifier = Modifier.height(6.dp))
-
-          PlayerQueueSection(
+          PlayerArtworkAndControls(
             isPlaybackReady = isPlaybackReady,
-            playingBook = playingBook,
-            libraryType = libraryType,
-            cachingModelView = cachingModelView,
+            bookTitle = bookTitle,
+            bookSubtitle = bookSubtitle,
             playerViewModel = playerViewModel,
+            imageLoader = imageLoader,
+            libraryType = libraryType,
+            settingsViewModel = settingsViewModel,
           )
         }
       }
