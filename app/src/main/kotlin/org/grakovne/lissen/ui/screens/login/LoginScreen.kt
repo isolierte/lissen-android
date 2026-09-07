@@ -143,8 +143,14 @@ fun LoginScreen(
 
   LaunchedEffect(Unit) {
     snapshotFlow { host }
-      .debounce(150)
-      .collect { viewModel.updateAuthData() }
+      .debounce(500)
+      .collect { value ->
+        // Only probe the server for login methods once the user has paused typing
+        // and the value looks like a plausible host — keeps typing smooth.
+        if (value.isPlausibleServerHost()) {
+          viewModel.updateAuthData()
+        }
+      }
   }
   Scaffold(
     modifier =
@@ -372,4 +378,11 @@ fun LoginScreen(
       }
     },
   )
+}
+
+private fun String.isPlausibleServerHost(): Boolean {
+  val trimmed = trim()
+  if (trimmed.isEmpty() || trimmed.length < 3) return false
+  if (trimmed.any { it.isWhitespace() }) return false
+  return true
 }

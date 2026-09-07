@@ -132,11 +132,13 @@ android {
 
   buildTypes {
     release {
-      if (project.hasProperty("RELEASE_STORE_FILE")) {
-        signingConfig = signingConfigs.getByName("release")
-      }
-      isMinifyEnabled = false
-      isShrinkResources = false
+      // Sign with the same committed stable key so it can overwrite the .v2 debug
+      // install (same package + same signature).
+      signingConfig = signingConfigs.getByName("stable")
+      applicationIdSuffix = ".v2"
+      // Minify so the release APK is small and runs as smooth as the published app.
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(
         getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
       )
