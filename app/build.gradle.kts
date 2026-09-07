@@ -64,6 +64,16 @@ ksp {
   arg("room.schemaLocation", "$projectDir/schemas")
 }
 
+// Which CPU ABIs to include in the app. Defaults to arm64-v8a only (smaller APK).
+// To build for all architectures: ./gradlew assembleDebug -PtargetAbis=arm64-v8a,armeabi-v7a,x86,x86_64
+val buildAbis =
+  (project.findProperty("targetAbis") as? String)
+    ?.takeIf { it.isNotBlank() }
+    ?.split(",")
+    ?.map { it.trim() }
+    ?.filter { it.isNotEmpty() }
+    ?: listOf("arm64-v8a")
+
 android {
   namespace = "org.grakovne.lissen"
   compileSdk = 37
@@ -86,6 +96,10 @@ android {
     targetSdk = 37
     versionCode = 11124
     versionName = "1.11.24-release"
+
+    ndk {
+      abiFilters += buildAbis
+    }
     
     testInstrumentationRunner = "org.grakovne.lissen.HiltTestRunner"
     
