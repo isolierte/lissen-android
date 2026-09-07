@@ -42,7 +42,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import org.grakovne.lissen.R
 import org.grakovne.lissen.domain.BookSkipSettings
 import org.grakovne.lissen.ui.components.LissenModalBottomSheet
 import org.grakovne.lissen.viewmodel.PlayerViewModel
@@ -89,7 +91,7 @@ fun SkipSettingsComposable(
     ) {
       // Title
       Text(
-        text = "Skip Intro & Outro",
+        text = stringResource(R.string.skip_settings_title),
         style = typography.titleLarge.copy(fontWeight = FontWeight.Bold),
         modifier = Modifier.padding(bottom = 16.dp),
       )
@@ -111,11 +113,11 @@ fun SkipSettingsComposable(
       ) {
         Column(modifier = Modifier.weight(1f)) {
           Text(
-            text = "Auto-skip",
+            text = stringResource(R.string.skip_settings_enable_title),
             style = typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
           )
           Text(
-            text = "Automatically skip intro and outro",
+            text = stringResource(R.string.skip_settings_enable_description),
             style = typography.bodySmall,
             color = colorScheme.onSurfaceVariant,
           )
@@ -133,8 +135,8 @@ fun SkipSettingsComposable(
 
       // Intro Section
       SkipSection(
-        title = "Intro Skip",
-        description = "Skip silence or intro music at the start of each chapter",
+        title = stringResource(R.string.skip_settings_intro_title),
+        description = stringResource(R.string.skip_settings_intro_description),
         seconds = introSeconds,
         inputText = introInput,
         currentChapterPosition = currentChapterPosition,
@@ -169,8 +171,8 @@ fun SkipSettingsComposable(
 
       // Outro Section
       SkipSection(
-        title = "Outro Skip",
-        description = "Skip credits or silence at the end of each chapter",
+        title = stringResource(R.string.skip_settings_outro_title),
+        description = stringResource(R.string.skip_settings_outro_description),
         seconds = outroSeconds,
         inputText = outroInput,
         currentChapterPosition = null, // No "set from position" for outro
@@ -256,7 +258,7 @@ private fun SkipSection(
           contentPadding = PaddingValues(0.dp),
         ) {
           Text(
-            text = "${preset}s",
+            text = stringResource(R.string.skip_settings_preset_seconds, preset),
             style =
               if (seconds == preset) {
                 typography.labelSmall.copy(fontWeight = FontWeight.Bold)
@@ -280,7 +282,7 @@ private fun SkipSection(
         ) {
           Icon(
             imageVector = Icons.Filled.MyLocation,
-            contentDescription = "Set from current position",
+            contentDescription = stringResource(R.string.skip_settings_set_from_current),
             tint = if (enabled) colorScheme.primary else colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp),
           )
@@ -302,8 +304,8 @@ private fun SkipSection(
             onValueChange(value.filter { it.isDigit() })
           }
         },
-        label = { Text("Seconds") },
-        placeholder = { Text("0") },
+        label = { Text(stringResource(R.string.skip_settings_manual_hint)) },
+        placeholder = { Text(stringResource(R.string.skip_settings_manual_placeholder)) },
         keyboardOptions =
           KeyboardOptions(
             keyboardType = KeyboardType.Number,
@@ -335,7 +337,7 @@ private fun SkipSection(
               contentColor = colorScheme.onErrorContainer,
             ),
         ) {
-          Text("Clear", style = typography.labelMedium)
+          Text(stringResource(R.string.skip_settings_clear), style = typography.labelMedium)
         }
       }
     }
