@@ -201,7 +201,7 @@ fun ChapterListSheet(
           if (index < displayedChapters.size - 1) {
             HorizontalDivider(
               thickness = 1.dp,
-              modifier = Modifier.padding(start = 24.dp, horizontal = 4.dp),
+              modifier = Modifier.padding(start = 24.dp, end = 4.dp),
             )
           }
         }
