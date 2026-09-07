@@ -10,8 +10,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.Slider
-import androidx.compose.material.SliderDefaults
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PauseCircleFilled
 import androidx.compose.material.icons.rounded.PlayCircleFilled
@@ -76,6 +90,19 @@ fun TrackControlComposable(
     }
   }
 
+  val chapterTitle =
+    remember(currentTrackIndex, book) {
+      book?.chapters?.getOrNull(currentTrackIndex)?.title.orEmpty()
+    }
+
+  val durationFloat = currentTrackDuration.toFloat()
+  val fraction =
+    if (durationFloat > 0f) {
+      (sliderPosition.toFloat() / durationFloat).coerceIn(0f, 1f)
+    } else {
+      0f
+    }
+
   Column(
     modifier =
       modifier
@@ -94,29 +121,43 @@ fun TrackControlComposable(
     Column(
       modifier = Modifier.fillMaxWidth(),
     ) {
-      Slider(
-        value = sliderPosition.toFloat(),
-        onValueChange = { newPosition ->
-          isDragging = true
-          sliderPosition = newPosition.toDouble()
-        },
-        onValueChangeFinished = {
-          isDragging = false
-          viewModel.seekTo(sliderPosition)
-        },
-        valueRange = 0f..currentTrackDuration.toFloat(),
-        colors =
-          SliderDefaults.colors(
-            thumbColor = colorScheme.primary,
-            activeTrackColor = colorScheme.primary,
-          ),
+      // 正在播放的章节名称，点击可打开章节列表
+      Row(
         modifier =
           Modifier
             .fillMaxWidth()
-            .semantics {
-              contentDescription = positionLabel
-              stateDescription = spokenPosition
-            },
+            .clickable { viewModel.requestChapterList() }
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Text(
+          text = chapterTitle,
+          style = typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+          color = colorScheme.onBackground,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          modifier = Modifier.weight(1f),
+        )
+        Icon(
+          imageVector = Icons.Outlined.KeyboardArrowDown,
+          contentDescription = null,
+          tint = colorScheme.onBackground.copy(alpha = 0.4f),
+          modifier = Modifier.size(20.dp),
+        )
+      }
+
+      ChapterSeekBar(
+        valuePercent = fraction,
+        onSeek = { f ->
+          isDragging = true
+          sliderPosition = (f * durationFloat).toDouble()
+        },
+        onSeekFinished = {
+          isDragging = false
+          viewModel.seekTo(sliderPosition)
+        },
+        contentDescription = positionLabel,
+        stateDescription = spokenPosition,
       )
     }
 
@@ -232,4 +273,101 @@ fun TrackControlComposable(
       }
     }
   }
+}
+
+/**
+ * A custom, thicker seek bar with a rounded track, a filled primary portion and
+ * a thumb. Supports tap-to-seek and horizontal drag.
+ */
+@Composable
+private fun ChapterSeekBar(
+  valuePercent: Float,
+  onSeek: (Float) -> Unit,
+  onSeekFinished: () -> Unit,
+  contentDescription: String,
+  stateDescription: String,
+  modifier: Modifier = Modifier,
+) {
+  val density = LocalDensity.current
+  val trackHeight = with(density) { 10.dp.toPx() }
+  val thumbRadius = with(density) { 11.dp.toPx() }
+  val thumbInset = with(density) { 3.5.dp.toPx() }
+
+  Box(
+    modifier =
+      modifier
+        .fillMaxWidth()
+        .height(30.dp)
+        .pointerInput(Unit) {
+          fun seekAt(x: Float) {
+            val w = size.width.toFloat()
+            if (w > 0f) {
+              onSeek((x / w).coerceIn(0f, 1f))
+            }
+          }
+          detectTapGestures { offset ->
+            seekAt(offset.x)
+            onSeekFinished()
+          }
+        }
+        .pointerInput(Unit) {
+          fun seekAt(x: Float) {
+            val w = size.width.toFloat()
+            if (w > 0f) {
+              onSeek((x / w).coerceIn(0f, 1f))
+            }
+          }
+          detectDragGestures(
+            onDragStart = { offset -> seekAt(offset.x) },
+            onDrag = { change, _ ->
+              change.consume()
+              seekAt(change.position.x)
+            },
+            onDragEnd = { onSeekFinished() },
+            onDragCancel = { onSeekFinished() },
+          )
+        }
+        .semantics {
+          this.contentDescription = contentDescription
+          this.stateDescription = stateDescription
+        }
+        .drawBehind {
+          val barWidth = size.width
+          val barCenterY = size.height / 2f
+          val progress = valuePercent.coerceIn(0f, 1f)
+          val corner = CornerRadius(trackHeight / 2f, trackHeight / 2f)
+
+          // background track
+          drawRoundRect(
+            color = colorScheme.surfaceVariant,
+            topLeft = Offset(0f, barCenterY - trackHeight / 2f),
+            size = Size(barWidth, trackHeight),
+            cornerRadius = corner,
+          )
+
+          // filled progress
+          val fillWidth = barWidth * progress
+          if (fillWidth > 0f) {
+            drawRoundRect(
+              color = colorScheme.primary,
+              topLeft = Offset(0f, barCenterY - trackHeight / 2f),
+              size = Size(fillWidth, trackHeight),
+              cornerRadius = corner,
+            )
+          }
+
+          // thumb
+          val thumbX = barWidth * progress
+          drawCircle(
+            color = colorScheme.primary,
+            radius = thumbRadius,
+            center = Offset(thumbX, barCenterY),
+          )
+          drawCircle(
+            color = colorScheme.surface,
+            radius = thumbRadius - thumbInset,
+            center = Offset(thumbX, barCenterY),
+          )
+        },
+  )
 }

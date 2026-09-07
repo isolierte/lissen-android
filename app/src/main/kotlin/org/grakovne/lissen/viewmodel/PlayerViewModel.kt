@@ -75,6 +75,14 @@ class PlayerViewModel
       Timber.d("Saved skip settings for $bookId: enabled=${settings.enabled}, intro=${settings.introSkipSeconds}s, outro=${settings.outroSkipSeconds}s")
     }
 
+    private val _chapterListRequestTick = MutableStateFlow(0)
+    val chapterListRequestTick: StateFlow<Int> = _chapterListRequestTick.asStateFlow()
+
+    /** Requests the chapter list sheet to open (e.g. tapping the now-playing chapter title). */
+    fun requestChapterList() {
+      _chapterListRequestTick.value += 1
+    }
+
     fun createBookmark(title: String? = null) {
       Timber.d("User action: createBookmark at position=${totalPosition.value.toInt()}s")
       viewModelScope.launch {

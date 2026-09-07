@@ -351,7 +351,8 @@ fun PlayerScreen(
           modifier =
             Modifier
               .testTag("playerScreen")
-              .padding(innerPadding),
+              .padding(innerPadding)
+              .fillMaxHeight(),
           horizontalAlignment = Alignment.CenterHorizontally,
         ) {
           PlayerArtworkAndControls(
@@ -399,7 +400,7 @@ private fun PlayerArtworkAndControls(
 ) {
   Column(
     horizontalAlignment = Alignment.CenterHorizontally,
-    modifier = modifier,
+    modifier = modifier.fillMaxHeight(),
   ) {
     if (!isPlaybackReady) {
       TrackDetailsPlaceholderComposable(bookTitle, bookSubtitle)
@@ -410,6 +411,9 @@ private fun PlayerArtworkAndControls(
         libraryType = libraryType,
       )
     }
+
+    // 将控制区(进度条+按钮)下移到屏幕中间偏下
+    Spacer(modifier = Modifier.weight(1f))
 
     if (!isPlaybackReady) {
       TrackControlPlaceholderComposable(
@@ -423,6 +427,8 @@ private fun PlayerArtworkAndControls(
         settingsViewModel = settingsViewModel,
       )
     }
+
+    Spacer(modifier = Modifier.height(12.dp))
   }
 }
 

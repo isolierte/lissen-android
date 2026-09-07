@@ -255,7 +255,7 @@
     <string name="skip_settings_manual_hint">Seconds</string>
     <string name="skip_settings_manual_placeholder">0</string>
     <string name="player_screen_skip_settings_navigation">Skip intro/outro</string>
-    <string name="player_screen_skip_navigation">Skip</string>
+    <string name="player_screen_skip_navigation">Intro/Outro</string>
     <string name="chapter_list_sort_ascending">Sort: ascending</string>
     <string name="chapter_list_sort_descending">Sort: descending</string>
     <string name="chapter_list_locate_current">Locate current chapter</string>

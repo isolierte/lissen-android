@@ -20,6 +20,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -73,6 +74,15 @@ fun NavigationBarComposable(
   var downloadsExpanded by remember { mutableStateOf(false) }
   var chapterListExpanded by remember { mutableStateOf(false) }
   var skipSettingsExpanded by remember { mutableStateOf(false) }
+
+  val chapterListRequestTick by playerViewModel.chapterListRequestTick.collectAsState()
+
+  // Open the chapter sheet when the now-playing title on the player page is tapped
+  LaunchedEffect(chapterListRequestTick) {
+    if (chapterListRequestTick > 0) {
+      chapterListExpanded = true
+    }
+  }
 
   val scope = rememberCoroutineScope()
 
