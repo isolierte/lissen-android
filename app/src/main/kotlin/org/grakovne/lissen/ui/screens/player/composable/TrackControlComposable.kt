@@ -293,6 +293,11 @@ private fun ChapterSeekBar(
   val thumbRadius = with(density) { 11.dp.toPx() }
   val thumbInset = with(density) { 3.5.dp.toPx() }
 
+  // Capture colors in composable scope (MaterialTheme.colorScheme is @Composable)
+  val trackColor = colorScheme.surfaceVariant
+  val fillColor = colorScheme.primary
+  val thumbInnerColor = colorScheme.surface
+
   Box(
     modifier =
       modifier
@@ -339,7 +344,7 @@ private fun ChapterSeekBar(
 
           // background track
           drawRoundRect(
-            color = colorScheme.surfaceVariant,
+            color = trackColor,
             topLeft = Offset(0f, barCenterY - trackHeight / 2f),
             size = Size(barWidth, trackHeight),
             cornerRadius = corner,
@@ -349,7 +354,7 @@ private fun ChapterSeekBar(
           val fillWidth = barWidth * progress
           if (fillWidth > 0f) {
             drawRoundRect(
-              color = colorScheme.primary,
+              color = fillColor,
               topLeft = Offset(0f, barCenterY - trackHeight / 2f),
               size = Size(fillWidth, trackHeight),
               cornerRadius = corner,
@@ -359,12 +364,12 @@ private fun ChapterSeekBar(
           // thumb
           val thumbX = barWidth * progress
           drawCircle(
-            color = colorScheme.primary,
+            color = fillColor,
             radius = thumbRadius,
             center = Offset(thumbX, barCenterY),
           )
           drawCircle(
-            color = colorScheme.surface,
+            color = thumbInnerColor,
             radius = thumbRadius - thumbInset,
             center = Offset(thumbX, barCenterY),
           )
