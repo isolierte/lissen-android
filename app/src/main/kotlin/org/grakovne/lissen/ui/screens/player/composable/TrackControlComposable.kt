@@ -127,7 +127,7 @@ fun TrackControlComposable(
           Modifier
             .fillMaxWidth()
             .clickable { viewModel.requestChapterList() }
-            .padding(horizontal = 8.dp, vertical = 2.dp),
+            .padding(horizontal = 16.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
         Text(
@@ -170,7 +170,7 @@ fun TrackControlComposable(
             Modifier
               .fillMaxWidth()
               .offset(y = (-4).dp)
-              .padding(horizontal = 8.dp),
+              .padding(horizontal = 16.dp),
           horizontalArrangement = Arrangement.SpaceBetween,
         ) {
           Text(
@@ -302,6 +302,7 @@ private fun ChapterSeekBar(
     modifier =
       modifier
         .fillMaxWidth()
+        .padding(horizontal = 16.dp)
         .height(30.dp)
         .pointerInput(Unit) {
           fun seekAt(x: Float) {

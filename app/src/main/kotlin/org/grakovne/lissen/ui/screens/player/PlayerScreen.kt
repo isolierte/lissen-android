@@ -412,7 +412,7 @@ private fun PlayerArtworkAndControls(
       )
     }
 
-    // 将控制区(进度条+按钮)下移到屏幕中间偏下
+    // 控制区(章节名+进度条+按钮)整体上移到中间偏下、不贴底
     Spacer(modifier = Modifier.weight(1f))
 
     if (!isPlaybackReady) {
@@ -428,7 +428,7 @@ private fun PlayerArtworkAndControls(
       )
     }
 
-    Spacer(modifier = Modifier.height(12.dp))
+    Spacer(modifier = Modifier.weight(0.35f))
   }
 }
 
