@@ -118,6 +118,18 @@ android {
   }
   
   
+  signingConfigs {
+    create("stable") {
+      storeFile = file("keystore/lissen-debug.p12")
+      storePassword = "lissen12345"
+      keyAlias = "lissen"
+      keyPassword = "lissen12345"
+      storeType = "PKCS12"
+      enableV1Signing = true
+      enableV2Signing = true
+    }
+  }
+
   buildTypes {
     release {
       if (project.hasProperty("RELEASE_STORE_FILE")) {
@@ -130,6 +142,9 @@ android {
       )
     }
     debug {
+      // Use the committed stable key so every build has the same signature
+      // (updates install over previous builds without uninstall).
+      signingConfig = signingConfigs.getByName("stable")
       applicationIdSuffix = ".debug"
       versionNameSuffix = " (DEBUG)"
       matchingFallbacks.add("release")
