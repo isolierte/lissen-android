@@ -145,7 +145,9 @@ android {
       // Use the committed stable key so every build has the same signature
       // (updates install over previous builds without uninstall).
       signingConfig = signingConfigs.getByName("stable")
-      applicationIdSuffix = ".debug"
+      // Fresh package name so it installs as a brand-new app and cannot hit
+      // INSTALL_FAILED_UPDATE_INCOMPATIBLE against any previously installed one.
+      applicationIdSuffix = ".v2"
       versionNameSuffix = " (DEBUG)"
       matchingFallbacks.add("release")
       isDebuggable = true
