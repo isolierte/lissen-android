@@ -4,6 +4,7 @@ import com.squareup.moshi.Types
 import kotlinx.coroutines.flow.Flow
 import org.grakovne.lissen.common.AudioFocusLossPolicy
 import org.grakovne.lissen.common.moshi
+import org.grakovne.lissen.domain.BookSkipSettings
 import org.grakovne.lissen.domain.CurrentEpisodeTimerOption
 import org.grakovne.lissen.domain.DetailedItem
 import org.grakovne.lissen.domain.DurationTimerOption
@@ -178,6 +179,70 @@ class PlaybackPreferences
         emptyMap()
       }
 
+    fun getSkipSettings(bookId: String): BookSkipSettings? {
+      val json = store.getString(KEY_SKIP_SETTINGS) ?: return null
+      return try {
+        val map = moshi.adapter<Map<String, BookSkipSettings>>(skipSettingsType).fromJson(json)
+        map?.get(bookId)
+      } catch (t: Throwable) {
+        Timber.w("Unable to read skip settings due to: ${t.message}")
+        null
+      }
+    }
+
+    fun getAllSkipSettings(): Map<String, BookSkipSettings> {
+      val json = store.getString(KEY_SKIP_SETTINGS) ?: return emptyMap()
+      return try {
+        moshi.adapter<Map<String, BookSkipSettings>>(skipSettingsType).fromJson(json) ?: emptyMap()
+      } catch (t: Throwable) {
+        Timber.w("Unable to read all skip settings due to: ${t.message}")
+        emptyMap()
+      }
+    }
+
+    fun saveAllSkipSettings(settings: Map<String, BookSkipSettings>) {
+      store.putString(
+        KEY_SKIP_SETTINGS,
+        moshi.adapter<Map<String, BookSkipSettings>>(skipSettingsType).toJson(settings),
+        commit = true,
+      )
+    }
+
+    fun saveSkipSettings(bookId: String, settings: BookSkipSettings?) {
+      val json = store.getString(KEY_SKIP_SETTINGS)
+      val current: MutableMap<String, BookSkipSettings> =
+        try {
+          json?.let { moshi.adapter<Map<String, BookSkipSettings>>(skipSettingsType).fromJson(it) }?.toMutableMap()
+            ?: mutableMapOf()
+        } catch (_: Throwable) {
+          mutableMapOf()
+        }
+
+      if (settings == null || (settings.introSkipSeconds == null && settings.outroSkipSeconds == null)) {
+        current.remove(bookId)
+      } else {
+        current[bookId] = settings
+      }
+
+      store.putString(
+        KEY_SKIP_SETTINGS,
+        moshi.adapter<Map<String, BookSkipSettings>>(skipSettingsType).toJson(current),
+        commit = true,
+      )
+
+      // Keep the playing item in sync if it's the same book
+      val playing = getPlayingItem()
+      if (playing != null && playing.id == bookId) {
+        savePlayingItemInternal(
+          libraryId = playing.libraryId ?: return,
+          item = playing.copy(
+            introSkipSeconds = settings?.introSkipSeconds,
+            outroSkipSeconds = settings?.outroSkipSeconds,
+          ),
+        )
+      }
+    }
+
     private fun TimerOption.toDto() =
       when (this) {
         CurrentEpisodeTimerOption -> TimerOptionDto(type = "episode")
@@ -192,6 +257,12 @@ class PlaybackPreferences
       }
 
     companion object {
+      private val skipSettingsType =
+        Types.newParameterizedType(
+          Map::class.java,
+          String::class.java,
+          BookSkipSettings::class.java,
+        )
       private const val KEY_PLAYING_ITEM = "playing_item"
       private const val KEY_VOLUME_BOOST = "volume_boost"
       private const val KEY_PREFERRED_PLAYBACK_SPEED = "preferred_playback_speed"
@@ -200,6 +271,7 @@ class PlaybackPreferences
       private const val KEY_AUDIO_FOCUS_LOSS_POLICY = "audio_focus_loss_policy"
       private const val KEY_EQUALIZER = "equalizer"
       private const val KEY_DEFAULT_SLEEP_TIMER = "default_sleep_timer"
+      private const val KEY_SKIP_SETTINGS = "book_skip_settings"
 
       private val playingItemsType =
         Types.newParameterizedType(

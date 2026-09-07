@@ -98,6 +98,11 @@ class MediaRepository
     private val _bookmarks = MutableStateFlow<List<Bookmark>>(emptyList())
     val bookmarks: StateFlow<List<Bookmark>> = _bookmarks.asStateFlow()
 
+    // Intro/outro auto-skip state
+    private var introSkippedForChapterIndex: Int = -1
+    private var lastKnownChapterIndex: Int = -1
+    private var lastKnownChapterPosition: Double = -1.0
+
     private val handler = Handler(Looper.getMainLooper())
 
     private val progressPoller =
@@ -105,7 +110,12 @@ class MediaRepository
         intervalMs = PROGRESS_UPDATE_INTERVAL_MS,
         schedule = { runnable, delay -> handler.postDelayed(runnable, delay) },
         cancel = { runnable -> handler.removeCallbacks(runnable) },
-        onTick = { _playingBook.value?.let { updateProgress(it) } },
+        onTick = {
+          _playingBook.value?.let {
+            updateProgress(it)
+            checkOutroSkip(it)
+          }
+        },
       )
 
     init {
@@ -191,6 +201,92 @@ class MediaRepository
                   _isPlaying.value = false
                   _playAfterPrepare.value = false
                   _mediaPreparingError.value = true
+                }
+              },
+            )
+
+            // Intro/outro auto-skip listener
+            mediaController.addListener(
+              object : Player.Listener {
+                override fun onMediaItemTransition(
+                  mediaItem: androidx.media3.common.MediaItem?,
+                  reason: Int,
+                ) {
+                  if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+                    introSkippedForChapterIndex = -1
+                  }
+                }
+
+                override fun onPositionDiscontinuity(
+                  oldPosition: Player.PositionInfo,
+                  newPosition: Player.PositionInfo,
+                  reason: Int,
+                ) {
+                  val book = _playingBook.value ?: return
+                  val settings = preferences.getSkipSettings(book.id) ?: return
+                  if (!settings.enabled) return
+                  val introSec = settings.introSkipSeconds ?: 0
+                  val outroSec = settings.outroSkipSeconds ?: 0
+                  if (introSec <= 0 && outroSec <= 0) return
+
+                  val newChIdx = newPosition.mediaItemIndex
+                  val newChPos = newPosition.positionMs / 1000.0
+
+                  if (reason == Player.DISCONTINUITY_REASON_SEEK) {
+                    // User manually sought — update tracking state
+                    if (newChIdx != lastKnownChapterIndex || newChPos < lastKnownChapterPosition - POSITION_EPSILON) {
+                      lastKnownChapterIndex = newChIdx
+                      lastKnownChapterPosition = newChPos
+
+                      // User seeks out of the intro → mark as visited
+                      if (introSec > 0 && newChIdx in book.chapters.indices) {
+                        val chapter = book.chapters[newChIdx]
+                        if (newChPos >= introSec || newChPos > chapter.duration / 2) {
+                          introSkippedForChapterIndex = newChIdx
+                        }
+                      }
+                    }
+                  } else if (reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION) {
+                    lastKnownChapterIndex = newChIdx
+                    lastKnownChapterPosition = newChPos
+                    introSkippedForChapterIndex = -1
+
+                    if (introSec > 0 && newChIdx in book.chapters.indices) {
+                      val chapter = book.chapters[newChIdx]
+                      if (chapter.duration > introSec && newChPos < introSec && chapter.available) {
+                        introSkippedForChapterIndex = newChIdx
+                        Timber.d("Auto-skip intro: chapter=$newChIdx, ${newChPos.toInt()}s → ${introSec}s")
+                        withMain {
+                          mediaController.seekTo(newChIdx, (introSec * 1000).toLong())
+                        }
+                      }
+                    }
+                  }
+                }
+
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                  if (!isPlaying) return
+
+                  // Check intro skip when playback starts/resumes
+                  val book = _playingBook.value ?: return
+                  val settings = preferences.getSkipSettings(book.id) ?: return
+                  if (!settings.enabled) return
+                  val introSec = settings.introSkipSeconds ?: 0
+                  if (introSec <= 0) return
+
+                  val idx = mediaController.currentMediaItemIndex
+                  val chPosMs = mediaController.currentPosition
+                  if (idx == -1) return
+                  if (idx in book.chapters.indices && introSkippedForChapterIndex != idx) {
+                    val chapter = book.chapters[idx]
+                    if (chapter.duration > introSec && chPosMs / 1000.0 < introSec && chapter.available) {
+                      introSkippedForChapterIndex = idx
+                      Timber.d("Auto-skip intro on play: chapter=$idx, ${(chPosMs / 1000).toInt()}s → ${introSec}s")
+                      withMain {
+                        mediaController.seekTo(idx, (introSec * 1000).toLong())
+                      }
+                    }
+                  }
                 }
               },
             )
@@ -415,6 +511,10 @@ class MediaRepository
       _mediaPreparingError.value = false
       _playAfterPrepare.value = false
       _isPlaybackReady.value = false
+
+      introSkippedForChapterIndex = -1
+      lastKnownChapterIndex = -1
+      lastKnownChapterPosition = -1.0
     }
 
     fun registerPlayingBook(book: DetailedItem) {
@@ -601,6 +701,32 @@ class MediaRepository
       _bookmarks.value = bookmarks
     }
 
+    private fun checkOutroSkip(book: DetailedItem) {
+      val settings = preferences.getSkipSettings(book.id) ?: return
+      if (!settings.enabled) return
+      val outroSec = settings.outroSkipSeconds ?: 0
+      if (outroSec <= 0) return
+
+      val chIdx = mediaController.currentMediaItemIndex
+      if (chIdx !in book.chapters.indices) return
+
+      val chapter = book.chapters[chIdx]
+      if (chapter.duration <= outroSec + 1.0) return
+
+      val chPosSec = mediaController.currentPosition / 1000.0
+      val remaining = chapter.duration - chPosSec
+
+      if (remaining in 0.0..outroSec.toDouble() && chPosSec > POSITION_EPSILON) {
+        val nextChapter = chIdx + 1
+        if (nextChapter < book.chapters.size) {
+          Timber.d("Auto-skip outro: chapter=$chIdx, remaining=${remaining.toInt()}s, advancing to $nextChapter")
+          withMain {
+            mediaController.seekTo(nextChapter, 0L)
+          }
+        }
+      }
+    }
+
     private fun withMain(action: () -> Unit) {
       when (Looper.myLooper() == Looper.getMainLooper()) {
         true -> action()
@@ -611,6 +737,7 @@ class MediaRepository
     private companion object {
       private const val CURRENT_TRACK_REPLAY_THRESHOLD = 5
       private const val PROGRESS_UPDATE_INTERVAL_MS = 500L
+      private const val POSITION_EPSILON = 2.0
 
       private fun getSeekTime(seconds: Int?): Long = seconds?.toLong() ?: 30L
     }

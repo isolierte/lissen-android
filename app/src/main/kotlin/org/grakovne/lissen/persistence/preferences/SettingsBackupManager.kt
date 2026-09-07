@@ -50,6 +50,7 @@ class SettingsBackupManager
         userAgent = connection.getUserAgent(),
         customHeaders = connection.getCustomHeaders(),
         localUrls = connection.getLocalUrls(),
+        bookSkipSettings = playback.getAllSkipSettings().takeIf { it.isNotEmpty() },
       )
     }
 
@@ -108,6 +109,7 @@ class SettingsBackupManager
       backup.userAgent?.let { connection.saveUserAgent(it) }
       backup.customHeaders?.let { connection.saveCustomHeaders(it) }
       backup.localUrls?.let { connection.saveLocalUrls(it) }
+      backup.bookSkipSettings?.let { playback.saveAllSkipSettings(it) }
     }
 
     private fun org.grakovne.lissen.domain.TimerOption.toDto() =

@@ -3,6 +3,7 @@ package org.grakovne.lissen.persistence.preferences
 import androidx.annotation.Keep
 import com.squareup.moshi.JsonClass
 import org.grakovne.lissen.common.LibraryOrderingConfiguration
+import org.grakovne.lissen.domain.BookSkipSettings
 import org.grakovne.lissen.domain.EqualizerSettings
 import org.grakovne.lissen.domain.SeekTime
 import org.grakovne.lissen.domain.connection.LocalUrl
@@ -37,8 +38,9 @@ data class SettingsBackup(
   val userAgent: String? = null,
   val customHeaders: List<ServerRequestHeader>? = null,
   val localUrls: List<LocalUrl>? = null,
+  val bookSkipSettings: Map<String, BookSkipSettings>? = null,
 ) {
   companion object {
-    const val SCHEMA_VERSION = 1
+    const val SCHEMA_VERSION = 2
   }
 }

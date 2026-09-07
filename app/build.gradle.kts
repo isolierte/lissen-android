@@ -81,7 +81,7 @@ android {
   }
   
   defaultConfig {
-    applicationId = "org.grakovne.lissen"
+    applicationId = "org.grakovne.lissen.skip"
     minSdk = 28
     targetSdk = 37
     versionCode = 11124

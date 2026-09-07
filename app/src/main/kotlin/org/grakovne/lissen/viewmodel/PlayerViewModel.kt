@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.grakovne.lissen.domain.BookSkipSettings
 import org.grakovne.lissen.domain.Bookmark
 import org.grakovne.lissen.domain.DetailedItem
 import org.grakovne.lissen.domain.LibraryType
@@ -54,6 +55,25 @@ class PlayerViewModel
     val isPlaying: StateFlow<Boolean> = mediaRepository.isPlaying
 
     val bookmarks: StateFlow<List<Bookmark>> = mediaRepository.bookmarks
+
+    private val _skipSettings = MutableStateFlow<BookSkipSettings?>(null)
+    val skipSettings: StateFlow<BookSkipSettings?> = _skipSettings.asStateFlow()
+
+    init {
+      // Sync skip settings when book changes
+      viewModelScope.launch {
+        mediaRepository.playingBook.collect { book ->
+          _skipSettings.value = book?.let { preferences.getSkipSettings(it.id) }
+        }
+      }
+    }
+
+    fun saveSkipSettings(settings: BookSkipSettings) {
+      val bookId = book.value?.id ?: return
+      _skipSettings.value = settings
+      preferences.saveSkipSettings(bookId, settings)
+      Timber.d("Saved skip settings for $bookId: enabled=${settings.enabled}, intro=${settings.introSkipSeconds}s, outro=${settings.outroSkipSeconds}s")
+    }
 
     fun createBookmark(title: String? = null) {
       Timber.d("User action: createBookmark at position=${totalPosition.value.toInt()}s")

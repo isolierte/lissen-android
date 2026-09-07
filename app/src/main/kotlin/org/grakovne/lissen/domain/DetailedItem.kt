@@ -25,10 +25,13 @@ data class DetailedItem(
   val localProvided: Boolean,
   val createdAt: Long,
   val updatedAt: Long,
+  val introSkipSeconds: Int? = null,
+  val outroSkipSeconds: Int? = null,
 ) : Serializable {
   companion object {
     fun DetailedItem.same(other: DetailedItem) =
-      this.copy(progress = null, libraryType = null) == other.copy(progress = null, libraryType = null)
+      this.copy(progress = null, libraryType = null, introSkipSeconds = null, outroSkipSeconds = null) ==
+        other.copy(progress = null, libraryType = null, introSkipSeconds = null, outroSkipSeconds = null)
   }
 }
 
