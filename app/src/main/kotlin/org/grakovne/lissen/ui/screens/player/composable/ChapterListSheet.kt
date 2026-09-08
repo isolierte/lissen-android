@@ -5,13 +5,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -19,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,11 +38,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import org.grakovne.lissen.R
 import org.grakovne.lissen.domain.LibraryType
+import org.grakovne.lissen.domain.PlayingChapter
 import org.grakovne.lissen.ui.components.LissenModalBottomSheet
 import org.grakovne.lissen.ui.screens.player.composable.common.provideNowPlayingTitle
 import org.grakovne.lissen.viewmodel.CachingModelView
@@ -47,8 +54,10 @@ import org.grakovne.lissen.viewmodel.PlayerViewModel
  * Full-screen chapter list sheet, opened from the "chapters" nav bar item.
  *
  * Slides up from the bottom, reusing the same popup style as the Downloads and
- * Playback Speed sheets. Provides ascending/descending sort and a button to
- * locate the currently playing chapter; on open it auto-scrolls there.
+ * Playback Speed sheets. Provides:
+ *  - a search field matching chapter ordinal (序号) or chapter title,
+ *  - ascending/descending sort,
+ *  - a "locate current chapter" button.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,24 +76,39 @@ fun ChapterListSheet(
   val bookId = book?.id ?: ""
   val chapters = book?.chapters ?: emptyList()
 
-  // 排序状态：正序/倒序
   var reversed by remember { mutableStateOf(false) }
   var locateTick by remember { mutableIntStateOf(0) }
+  var searchQuery by remember { mutableStateOf("") }
 
-  val displayedChapters =
-    remember(chapters, reversed) {
-      if (reversed) chapters.reversed() else chapters
+  // 序号 = 章节在书中的原始顺序（1-based）。排序反转不改变章节序号。
+  val itemsWithOrdinal: List<Pair<Int, PlayingChapter>> =
+    remember(chapters) {
+      chapters.mapIndexed { index, chapter -> (index + 1) to chapter }
+    }
+
+  // 应用倒序（仅影响排列，不影响序号）
+  val orderedItems: List<Pair<Int, PlayingChapter>> =
+    remember(itemsWithOrdinal, reversed) {
+      if (reversed) itemsWithOrdinal.reversed() else itemsWithOrdinal
+    }
+
+  // 搜索过滤：匹配 序号字符串 或 章节名称（忽略大小写，包含即中）
+  val displayedItems: List<Pair<Int, PlayingChapter>> =
+    remember(orderedItems, searchQuery) {
+      val q = searchQuery.trim().lowercase()
+      if (q.isEmpty()) {
+        orderedItems
+      } else {
+        orderedItems.filter { (ordinal, chapter) ->
+          ordinal.toString().lowercase().contains(q) ||
+            chapter.title.lowercase().contains(q)
+        }
+      }
     }
 
   val currentTrackId =
     remember(currentTrackIndex, chapters) {
       chapters.getOrNull(currentTrackIndex)?.id
-    }
-
-  // 当前章节在当前显示(可能倒序)列表里的位置
-  val currentDisplayIndex =
-    remember(displayedChapters, currentTrackId) {
-      displayedChapters.indexOfFirst { it.id == currentTrackId }
     }
 
   val maxDuration =
@@ -101,10 +125,12 @@ fun ChapterListSheet(
     }
   val cachedChapterIds by cachedChapterIdsFlow.collectAsState(initial = emptySet())
 
-  // 打开时自动定位到当前播放章节；切换排序或点定位按钮时重新定位
-  LaunchedEffect(currentDisplayIndex, locateTick) {
-    if (currentDisplayIndex >= 0 && displayedChapters.isNotEmpty()) {
-      listState.animateScrollToItem(currentDisplayIndex)
+  // 打开/切排序/点定位 → 滚到当前播放章节；搜索时不做自动定位
+  LaunchedEffect(currentTrackId, reversed, locateTick, searchQuery) {
+    if (searchQuery.isNotBlank()) return@LaunchedEffect
+    val idx = displayedItems.indexOfFirst { it.second.id == currentTrackId }
+    if (idx >= 0 && displayedItems.isNotEmpty()) {
+      listState.animateScrollToItem(idx)
     }
   }
 
@@ -164,6 +190,42 @@ fun ChapterListSheet(
       }
 
       HorizontalDivider()
+
+      // 搜索框：可按 序号 或 章节名 搜索
+      Row(
+        modifier =
+          Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        OutlinedTextField(
+          value = searchQuery,
+          onValueChange = { searchQuery = it },
+          modifier =
+            Modifier
+              .weight(1f)
+              .height(52.dp),
+          placeholder = { Text(stringResource(R.string.chapter_list_search_hint)) },
+          leadingIcon = {
+            Icon(Icons.Filled.Search, contentDescription = null)
+          },
+          trailingIcon = {
+            if (searchQuery.isNotEmpty()) {
+              IconButton(onClick = { searchQuery = "" }) {
+                Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.a11y_clear))
+              }
+            }
+          },
+          singleLine = true,
+          keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Search),
+          keyboardActions =
+            KeyboardActions(
+              onSearch = { /* live filter is enough */ },
+            ),
+        )
+      }
+
       Text(
         text =
           stringResource(
@@ -175,7 +237,7 @@ fun ChapterListSheet(
           ),
         style = typography.labelMedium,
         color = colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
       )
 
       LazyColumn(
@@ -186,9 +248,9 @@ fun ChapterListSheet(
             .fillMaxWidth(),
       ) {
         itemsIndexed(
-          displayedChapters,
-          key = { _, chapter -> chapter.id },
-        ) { index, chapter ->
+          displayedItems,
+          key = { _, (_, chapter) -> chapter.id },
+        ) { index, (ordinal, chapter) ->
           PlaylistItemComposable(
             track = chapter,
             isSelected = chapter.id == currentTrackId,
@@ -196,9 +258,10 @@ fun ChapterListSheet(
             modifier = Modifier.fillMaxWidth(),
             maxDuration = maxDuration,
             isCached = chapter.id in cachedChapterIds,
+            ordinal = ordinal,
           )
 
-          if (index < displayedChapters.size - 1) {
+          if (index < displayedItems.size - 1) {
             HorizontalDivider(
               thickness = 1.dp,
               modifier = Modifier.padding(start = 24.dp, end = 4.dp),

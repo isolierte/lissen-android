@@ -183,6 +183,7 @@
     <string name="chapter_list_sort_ascending">排序：正序</string>
     <string name="chapter_list_sort_descending">排序：倒序</string>
     <string name="chapter_list_locate_current">定位当前章节</string>
+    <string name="chapter_list_search_hint">搜索章节（序号或名称）</string>
     <string name="skip_settings_clear">清除</string>
     <string name="skip_settings_seconds_value">%1$d 秒</string>
     <string name="skip_settings_set_from_current">从当前位置设置</string>

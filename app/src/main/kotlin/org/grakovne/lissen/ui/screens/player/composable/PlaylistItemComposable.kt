@@ -43,6 +43,7 @@ fun PlaylistItemComposable(
   modifier: Modifier,
   maxDuration: Double,
   isCached: Boolean,
+  ordinal: Int? = null,
 ) {
   val fontScale = LocalDensity.current.fontScale
   val textMeasurer = rememberTextMeasurer()
@@ -71,8 +72,8 @@ fun PlaylistItemComposable(
     verticalAlignment = Alignment.CenterVertically,
     modifier =
       modifier
-        .padding(start = 6.dp)
-        .padding(end = 4.dp)
+        .padding(start = 16.dp)
+        .padding(end = 16.dp)
         .padding(vertical = 12.dp)
         .clickable(
           onClick = onClick,
@@ -103,6 +104,23 @@ fun PlaylistItemComposable(
     }
 
     Spacer(modifier = Modifier.width(8.dp))
+
+    // 序号（可搜索的"章节号"）
+    ordinal
+      ?.let {
+        Text(
+          text = "$it.",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+          color =
+            if (isSelected) {
+              colorScheme.primary
+            } else {
+              colorScheme.onBackground.copy(alpha = 0.5f)
+            },
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+      }
 
     Text(
       text = track.title,
