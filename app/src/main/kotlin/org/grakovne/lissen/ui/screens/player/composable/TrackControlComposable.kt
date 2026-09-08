@@ -132,7 +132,7 @@ fun TrackControlComposable(
       ) {
         Text(
           text = chapterTitle,
-          style = typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+          style = typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
           color = colorScheme.onBackground,
           maxLines = 1,
           overflow = TextOverflow.Ellipsis,
@@ -195,7 +195,7 @@ fun TrackControlComposable(
         modifier =
           Modifier
             .fillMaxWidth()
-            .padding(top = 6.dp)
+            .padding(top = 18.dp)
             .align(Alignment.BottomCenter),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
@@ -289,9 +289,9 @@ private fun ChapterSeekBar(
   modifier: Modifier = Modifier,
 ) {
   val density = LocalDensity.current
-  val trackHeight = with(density) { 10.dp.toPx() }
-  val thumbRadius = with(density) { 11.dp.toPx() }
-  val thumbInset = with(density) { 3.5.dp.toPx() }
+  val trackHeight = with(density) { 12.dp.toPx() }
+  val thumbRadius = with(density) { 14.dp.toPx() }
+  val thumbInset = with(density) { 4.dp.toPx() }
 
   // Capture colors in composable scope (MaterialTheme.colorScheme is @Composable)
   val trackColor = colorScheme.surfaceVariant

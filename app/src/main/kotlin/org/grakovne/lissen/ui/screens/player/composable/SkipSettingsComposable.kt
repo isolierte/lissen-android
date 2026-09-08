@@ -11,12 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -24,7 +22,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,17 +34,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.grakovne.lissen.R
 import org.grakovne.lissen.domain.BookSkipSettings
 import org.grakovne.lissen.ui.components.LissenModalBottomSheet
+import org.grakovne.lissen.ui.components.slider.CommonSlider
 import org.grakovne.lissen.viewmodel.PlayerViewModel
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,16 +53,11 @@ fun SkipSettingsComposable(
 ) {
   val skipSettings by playerViewModel.skipSettings.collectAsState()
   val currentChapterPosition by playerViewModel.currentChapterPosition.collectAsState()
-  val book by playerViewModel.book.collectAsState()
 
   val current = skipSettings ?: BookSkipSettings()
   var enabled by remember { mutableStateOf(current.enabled) }
   var introSeconds by remember { mutableIntStateOf(current.introSkipSeconds ?: 0) }
   var outroSeconds by remember { mutableIntStateOf(current.outroSkipSeconds ?: 0) }
-  var introInput by remember { mutableStateOf(if (introSeconds > 0) introSeconds.toString() else "") }
-  var outroInput by remember { mutableStateOf(if (outroSeconds > 0) outroSeconds.toString() else "") }
-
-  val presets = listOf(5, 10, 15, 30)
 
   fun applySettings() {
     playerViewModel.saveSkipSettings(
@@ -81,7 +72,6 @@ fun SkipSettingsComposable(
   LissenModalBottomSheet(
     onDismissRequest = onDismissRequest,
     containerColor = colorScheme.background,
-    scrollable = false,
   ) {
     Column(
       modifier =
@@ -90,7 +80,7 @@ fun SkipSettingsComposable(
           .padding(horizontal = 16.dp, vertical = 8.dp),
       horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-      // Title (matches speed/Timer style: bodyLarge)
+      // Title (matches sleep timer page style)
       Text(
         text = stringResource(R.string.skip_settings_title),
         style = typography.bodyLarge,
@@ -108,7 +98,7 @@ fun SkipSettingsComposable(
               enabled = !enabled
               applySettings()
             }
-            .padding(vertical = 12.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -131,67 +121,44 @@ fun SkipSettingsComposable(
         )
       }
 
-      // ── Intro Section (same pattern as speed/Timer) ──
-      SkipSection(
+      // ── Intro Section: seconds slider (same style as sleep timer) ──
+      SkipSecondsSection(
         title = stringResource(R.string.skip_settings_intro_title),
         seconds = introSeconds,
-        inputText = introInput,
-        currentChapterPosition = currentChapterPosition,
-        presets = presets,
-        onValueChange = { introInput = it },
-        onApplyInput = {
-          val parsed = introInput.toIntOrNull() ?: 0
-          introSeconds = parsed
-          introInput = if (parsed > 0) parsed.toString() else ""
-          applySettings()
-        },
-        onPresetClick = {
-          introSeconds = it
-          introInput = it.toString()
-          applySettings()
-        },
-        onSetFromPosition = {
-          val pos = currentChapterPosition.toInt()
-          introSeconds = pos
-          introInput = if (pos > 0) pos.toString() else ""
-          applySettings()
-        },
-        onClear = {
-          introSeconds = 0
-          introInput = ""
-          applySettings()
-        },
         enabled = enabled,
+        showLocate = true,
+        locateContentDescription = stringResource(R.string.skip_settings_set_from_current),
+        onLocate = {
+          if (enabled) {
+            val pos = currentChapterPosition.toInt().coerceIn(0, MAX_SKIP_SECONDS)
+            introSeconds = pos
+            applySettings()
+          }
+        },
+        onChange = { value ->
+          if (enabled) {
+            introSeconds = value
+            applySettings()
+          }
+        },
       )
 
       Spacer(modifier = Modifier.height(16.dp))
 
       // ── Outro Section ──
-      SkipSection(
+      SkipSecondsSection(
         title = stringResource(R.string.skip_settings_outro_title),
         seconds = outroSeconds,
-        inputText = outroInput,
-        currentChapterPosition = null,
-        presets = presets,
-        onValueChange = { outroInput = it },
-        onApplyInput = {
-          val parsed = outroInput.toIntOrNull() ?: 0
-          outroSeconds = parsed
-          outroInput = if (parsed > 0) parsed.toString() else ""
-          applySettings()
-        },
-        onPresetClick = {
-          outroSeconds = it
-          outroInput = it.toString()
-          applySettings()
-        },
-        onSetFromPosition = null,
-        onClear = {
-          outroSeconds = 0
-          outroInput = ""
-          applySettings()
-        },
         enabled = enabled,
+        showLocate = false,
+        locateContentDescription = "",
+        onLocate = {},
+        onChange = { value ->
+          if (enabled) {
+            outroSeconds = value
+            applySettings()
+          }
+        },
       )
 
       Spacer(modifier = Modifier.height(16.dp))
@@ -200,138 +167,145 @@ fun SkipSettingsComposable(
 }
 
 @Composable
-private fun SkipSection(
+private fun SkipSecondsSection(
   title: String,
   seconds: Int,
-  inputText: String,
-  currentChapterPosition: Double?,
-  presets: List<Int>,
-  onValueChange: (String) -> Unit,
-  onApplyInput: () -> Unit,
-  onPresetClick: (Int) -> Unit,
-  onSetFromPosition: (() -> Unit)?,
-  onClear: () -> Unit,
   enabled: Boolean,
+  showLocate: Boolean,
+  locateContentDescription: String,
+  onLocate: () -> Unit,
+  onChange: (Int) -> Unit,
 ) {
-  val focusManager = LocalFocusManager.current
-
   Column(
     modifier =
       Modifier
         .fillMaxWidth()
         .alpha(if (enabled) 1f else 0.5f),
-    horizontalAlignment = Alignment.CenterHorizontally,
   ) {
-    // Section title
-    Text(
-      text = title,
-      style = typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-      modifier = Modifier.padding(bottom = 8.dp),
+    // Section title row: title on the left, optional locate button on the right
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text(
+        text = title,
+        style = typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+        modifier = Modifier.weight(1f),
+      )
+
+      if (showLocate) {
+        IconButton(
+          onClick = { onLocate() },
+          enabled = enabled,
+          modifier = Modifier.size(40.dp),
+        ) {
+          Icon(
+            imageVector = Icons.Filled.MyLocation,
+            contentDescription = locateContentDescription,
+            tint = if (enabled) colorScheme.primary else colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp),
+          )
+        }
+      }
+    }
+
+    // Main time adjustment: sliding bar, identical to the sleep timer page
+    SkipSecondsSlider(
+      seconds = seconds,
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .padding(vertical = 4.dp),
+      onChange = onChange,
     )
 
-    // Circular preset buttons (identical to speed/Timer style)
+    // Quick presets (circle buttons, same as sleep timer page)
     Row(
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
-      presets.forEach { preset ->
+      SkipSecondsPresets.forEach { value ->
+        val selected =
+          when (value) {
+            null -> seconds == 0
+            else -> seconds == value
+          }
+
         FilledTonalButton(
-          onClick = { if (enabled) onPresetClick(preset) },
+          onClick = {
+            val target =
+              when (value) {
+                null -> 0
+                else -> value
+              }
+            onChange(target)
+          },
           modifier = Modifier.size(56.dp),
           shape = CircleShape,
           enabled = enabled,
           colors =
             ButtonDefaults.filledTonalButtonColors(
-              containerColor =
-                if (seconds == preset) colorScheme.primary else colorScheme.surfaceContainer,
-              contentColor =
-                if (seconds == preset) colorScheme.onPrimary else colorScheme.onSurfaceVariant,
+              containerColor = if (selected) colorScheme.primary else colorScheme.surfaceContainer,
+              contentColor = if (selected) colorScheme.onPrimary else colorScheme.onSurfaceVariant,
             ),
           contentPadding = PaddingValues(0.dp),
         ) {
-          Text(
-            text = stringResource(R.string.skip_settings_preset_seconds, preset),
-            style =
-              if (seconds == preset) {
-                typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-              } else {
-                typography.labelMedium
-              },
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-          )
-        }
-      }
-    }
-
-    Spacer(modifier = Modifier.height(12.dp))
-
-    // Manual input + action buttons (compact row)
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      verticalAlignment = Alignment.CenterVertically,
-    ) {
-      OutlinedTextField(
-        value = inputText,
-        onValueChange = { value ->
-          if (enabled) {
-            onValueChange(value.filter { it.isDigit() })
+          if (value == null) {
+            Icon(
+              imageVector = Icons.Outlined.Close,
+              contentDescription = null,
+              modifier = Modifier.size(20.dp),
+            )
+          } else {
+            Text(
+              text = value.toString(),
+              style =
+                if (selected) {
+                  typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                } else {
+                  typography.labelMedium
+                },
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+            )
           }
-        },
-        label = { Text(stringResource(R.string.skip_settings_manual_hint)) },
-        placeholder = { Text(stringResource(R.string.skip_settings_manual_placeholder)) },
-        keyboardOptions =
-          KeyboardOptions(
-            keyboardType = KeyboardType.Number,
-            imeAction = ImeAction.Done,
-          ),
-        keyboardActions =
-          KeyboardActions(
-            onDone = {
-              onApplyInput()
-              focusManager.clearFocus()
-            },
-          ),
-        singleLine = true,
-        enabled = enabled,
-        modifier =
-          Modifier
-            .weight(1f)
-            .height(56.dp),
-      )
-
-      // "Set from current position" (intro only)
-      if (onSetFromPosition != null && currentChapterPosition != null) {
-        Spacer(modifier = Modifier.width(8.dp))
-        IconButton(
-          onClick = { if (enabled) onSetFromPosition() },
-          enabled = enabled,
-          modifier = Modifier.size(48.dp),
-        ) {
-          Icon(
-            imageVector = Icons.Filled.MyLocation,
-            contentDescription = stringResource(R.string.skip_settings_set_from_current),
-            tint = if (enabled) colorScheme.primary else colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
-          )
-        }
-      }
-
-      // Clear button (only when value > 0)
-      if (seconds > 0) {
-        Spacer(modifier = Modifier.width(8.dp))
-        FilledTonalButton(
-          onClick = { if (enabled) onClear() },
-          enabled = enabled,
-          colors =
-            ButtonDefaults.filledTonalButtonColors(
-              containerColor = colorScheme.errorContainer,
-              contentColor = colorScheme.onErrorContainer,
-            ),
-        ) {
-          Text(stringResource(R.string.skip_settings_clear), style = typography.labelMedium)
         }
       }
     }
   }
 }
+
+/**
+ * Slider for picking a whole number of seconds (0..[MAX_SKIP_SECONDS]).
+ * Mirrors the SleepTimerSlider UI (large centered value, tick scale, drag).
+ */
+@Composable
+private fun SkipSecondsSlider(
+  seconds: Int,
+  modifier: Modifier = Modifier,
+  onChange: (Int) -> Unit,
+) {
+  val range = 0..MAX_SKIP_SECONDS
+  val headerTemplate = stringResource(R.string.skip_settings_seconds_value)
+
+  CommonSlider(
+    internalValue = seconds.coerceIn(range),
+    range = range,
+    formatHeader = { value -> headerTemplate.format(value.roundToInt()) },
+    formatIndex = { it },
+    labeledIndexes = (5..MAX_SKIP_SECONDS step 5).toList(),
+    modifier = modifier,
+    onUpdate = { value -> onChange(value.roundToInt().coerceIn(range)) },
+  )
+}
+
+private val SkipSecondsPresets =
+  listOf(
+    null, // 0 = off / clear
+    5,
+    10,
+    15,
+    30,
+  )
+
+private const val MAX_SKIP_SECONDS = 120
