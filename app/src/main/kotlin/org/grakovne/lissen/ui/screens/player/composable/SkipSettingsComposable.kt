@@ -38,11 +38,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.grakovne.lissen.R
 import org.grakovne.lissen.domain.BookSkipSettings
@@ -80,7 +80,7 @@ fun SkipSettingsComposable(
 
   LissenModalBottomSheet(
     onDismissRequest = onDismissRequest,
-    containerColor = colorScheme.surface,
+    containerColor = colorScheme.background,
     scrollable = false,
   ) {
     Column(
@@ -88,12 +88,12 @@ fun SkipSettingsComposable(
         Modifier
           .fillMaxWidth()
           .padding(horizontal = 16.dp, vertical = 8.dp),
+      horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-      // Title
+      // Title (matches speed/Timer style: bodyLarge)
       Text(
         text = stringResource(R.string.skip_settings_title),
-        style = typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-        modifier = Modifier.padding(bottom = 16.dp),
+        style = typography.bodyLarge,
       )
 
       // Master toggle
@@ -108,7 +108,7 @@ fun SkipSettingsComposable(
               enabled = !enabled
               applySettings()
             }
-            .padding(vertical = 8.dp),
+            .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -131,12 +131,9 @@ fun SkipSettingsComposable(
         )
       }
 
-      Spacer(modifier = Modifier.height(12.dp))
-
-      // Intro Section
+      // ── Intro Section (same pattern as speed/Timer) ──
       SkipSection(
         title = stringResource(R.string.skip_settings_intro_title),
-        description = stringResource(R.string.skip_settings_intro_description),
         seconds = introSeconds,
         inputText = introInput,
         currentChapterPosition = currentChapterPosition,
@@ -169,13 +166,12 @@ fun SkipSettingsComposable(
 
       Spacer(modifier = Modifier.height(16.dp))
 
-      // Outro Section
+      // ── Outro Section ──
       SkipSection(
         title = stringResource(R.string.skip_settings_outro_title),
-        description = stringResource(R.string.skip_settings_outro_description),
         seconds = outroSeconds,
         inputText = outroInput,
-        currentChapterPosition = null, // No "set from position" for outro
+        currentChapterPosition = null,
         presets = presets,
         onValueChange = { outroInput = it },
         onApplyInput = {
@@ -198,7 +194,7 @@ fun SkipSettingsComposable(
         enabled = enabled,
       )
 
-      Spacer(modifier = Modifier.height(24.dp))
+      Spacer(modifier = Modifier.height(16.dp))
     }
   }
 }
@@ -206,7 +202,6 @@ fun SkipSettingsComposable(
 @Composable
 private fun SkipSection(
   title: String,
-  description: String,
   seconds: Int,
   inputText: String,
   currentChapterPosition: Double?,
@@ -225,27 +220,24 @@ private fun SkipSection(
       Modifier
         .fillMaxWidth()
         .alpha(if (enabled) 1f else 0.5f),
+    horizontalAlignment = Alignment.CenterHorizontally,
   ) {
+    // Section title
     Text(
       text = title,
-      style = typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-    )
-    Text(
-      text = description,
-      style = typography.bodySmall,
-      color = colorScheme.onSurfaceVariant,
+      style = typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
       modifier = Modifier.padding(bottom = 8.dp),
     )
 
-    // Preset buttons
+    // Circular preset buttons (identical to speed/Timer style)
     Row(
       modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
       presets.forEach { preset ->
         FilledTonalButton(
           onClick = { if (enabled) onPresetClick(preset) },
-          modifier = Modifier.size(48.dp),
+          modifier = Modifier.size(56.dp),
           shape = CircleShape,
           enabled = enabled,
           colors =
@@ -261,38 +253,20 @@ private fun SkipSection(
             text = stringResource(R.string.skip_settings_preset_seconds, preset),
             style =
               if (seconds == preset) {
-                typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                typography.labelMedium.copy(fontWeight = FontWeight.Bold)
               } else {
-                typography.labelSmall
+                typography.labelMedium
               },
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
           )
         }
       }
-
-      Spacer(modifier = Modifier.weight(1f))
-
-      // Set from current position (for intro only)
-      if (onSetFromPosition != null && currentChapterPosition != null) {
-        IconButton(
-          onClick = { if (enabled) onSetFromPosition() },
-          enabled = enabled,
-          modifier = Modifier.size(48.dp),
-        ) {
-          Icon(
-            imageVector = Icons.Filled.MyLocation,
-            contentDescription = stringResource(R.string.skip_settings_set_from_current),
-            tint = if (enabled) colorScheme.primary else colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
-          )
-        }
-      }
     }
 
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(12.dp))
 
-    // Manual input + current value display
+    // Manual input + action buttons (compact row)
     Row(
       modifier = Modifier.fillMaxWidth(),
       verticalAlignment = Alignment.CenterVertically,
@@ -326,6 +300,24 @@ private fun SkipSection(
             .height(56.dp),
       )
 
+      // "Set from current position" (intro only)
+      if (onSetFromPosition != null && currentChapterPosition != null) {
+        Spacer(modifier = Modifier.width(8.dp))
+        IconButton(
+          onClick = { if (enabled) onSetFromPosition() },
+          enabled = enabled,
+          modifier = Modifier.size(48.dp),
+        ) {
+          Icon(
+            imageVector = Icons.Filled.MyLocation,
+            contentDescription = stringResource(R.string.skip_settings_set_from_current),
+            tint = if (enabled) colorScheme.primary else colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
+          )
+        }
+      }
+
+      // Clear button (only when value > 0)
       if (seconds > 0) {
         Spacer(modifier = Modifier.width(8.dp))
         FilledTonalButton(
