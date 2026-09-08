@@ -136,9 +136,11 @@ android {
       // install (same package + same signature).
       signingConfig = signingConfigs.getByName("stable")
       applicationIdSuffix = ".v2"
-      // Minify so the release APK is small and runs as smooth as the published app.
-      isMinifyEnabled = true
-      isShrinkResources = true
+      // Match the published build exactly: no minification. R8 rewriting the
+      // Compose runtime broke baseline-profile AOT matching and made typing on
+      // the login screen stutter (the stock release is unminified too).
+      isMinifyEnabled = false
+      isShrinkResources = false
       proguardFiles(
         getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
       )
@@ -153,8 +155,6 @@ android {
       versionNameSuffix = " (DEBUG)"
       matchingFallbacks.add("release")
       isDebuggable = true
-      enableUnitTestCoverage = true
-      enableAndroidTestCoverage = true
     }
   }
   

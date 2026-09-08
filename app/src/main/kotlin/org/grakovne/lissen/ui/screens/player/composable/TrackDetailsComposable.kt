@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
@@ -99,13 +100,15 @@ fun TrackDetailsComposable(
       style = typography.headlineSmall,
       fontWeight = FontWeight.SemiBold,
       color = colorScheme.onBackground,
-      textAlign = TextAlign.Center,
+      // Left-align so wrapped lines share a common left edge (ragged centred
+      // lines looked messy); wrapContentWidth keeps short titles centred.
+      textAlign = TextAlign.Start,
       overflow = TextOverflow.Ellipsis,
       maxLines = 2,
       modifier =
         Modifier
-          .fillMaxWidth()
-          .padding(horizontal = 16.dp),
+          .padding(horizontal = 16.dp)
+          .wrapContentWidth(Alignment.CenterHorizontally),
     )
 
     Spacer(modifier = Modifier.height(2.dp))
