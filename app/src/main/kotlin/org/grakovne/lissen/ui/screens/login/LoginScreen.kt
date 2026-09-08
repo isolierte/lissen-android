@@ -157,6 +157,7 @@ fun LoginScreen(
       Modifier
         .testTag("loginScreen")
         .systemBarsPadding()
+        .imePadding()
         .fillMaxSize(),
     content = { innerPadding ->
       Box(
@@ -169,8 +170,7 @@ fun LoginScreen(
           modifier =
             Modifier
               .fillMaxSize()
-              .verticalScroll(rememberScrollState())
-              .imePadding(),
+              .verticalScroll(rememberScrollState()),
           verticalArrangement = Arrangement.Center,
           horizontalAlignment = Alignment.CenterHorizontally,
         ) {
