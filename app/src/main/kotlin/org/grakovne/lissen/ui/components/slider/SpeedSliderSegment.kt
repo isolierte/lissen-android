@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.absoluteValue
@@ -60,10 +59,9 @@ fun SpeedSliderSegment(
     if (labelRequired) {
       val label = formatIndex(index)
       val fontSize = typography.bodyMedium.fontSize
-      val itemHeightDp = with(LocalDensity.current) { fontSize.toDp() }
 
       Box(
-        modifier = Modifier.height(itemHeightDp),
+        modifier = Modifier.height(28.dp),
         contentAlignment = Alignment.Center,
       ) {
         when (label) {
@@ -71,7 +69,7 @@ fun SpeedSliderSegment(
             Text(
               text = label.toString(),
               fontSize = fontSize,
-              lineHeight = fontSize,
+              lineHeight = typography.bodyMedium.lineHeight,
             )
           }
 
